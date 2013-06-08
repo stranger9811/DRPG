@@ -14,17 +14,18 @@ public class Binarization {
  
         File original_f = new File(args[0]);
         String[] parts= args[0].split("\\.");
-        String output_f = "_bin"+parts[0];
+        String output_f = parts[0]+"_bin";
         original = ImageIO.read(original_f);
-        grayscale = toGray(original);
+	grayscale = toGray(original);
         binarized = binarize(grayscale);
+	
         writeImage(output_f,parts[1]);         
  
     }
  
     private static void writeImage(String output, String part) throws IOException {
-        File file = new File(output+"."+part);
-        ImageIO.write(binarized, part, file);
+        File file = new File(output+".bmp");
+        ImageIO.write(binarized, "bmp", file);
     }
  
     // Return histogram of grayscale image
@@ -123,6 +124,8 @@ public class Binarization {
         int threshold = otsuTreshold(original);
  
         BufferedImage binarized = new BufferedImage(original.getWidth(), original.getHeight(), original.getType());
+
+
  
         for(int i=0; i<original.getWidth(); i++) {
             for(int j=0; j<original.getHeight(); j++) {
