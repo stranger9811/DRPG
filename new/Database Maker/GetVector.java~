@@ -147,14 +147,14 @@ public class GetVector {
 		while(i < width && i>=0 && j < height && j>=0)
 		{
 			if((new Color(image.getRGB(i, j)).getRed()==0) && j<v[2][1] )
-				v[2][1] = j;
+				v[2][1] = i;
 			j--;
 		}
 		i=Xs;j=Ys;
 		while(i < width && i>=0 && j < height && j>=0)
 		{
 			if((new Color(image.getRGB(i, j)).getRed()==0) && j>v[6][1] )
-				v[6][1] = j;
+				v[6][1] = i;
 			j++;
 		}
 		i=Xs;j=Ys;
@@ -207,9 +207,9 @@ public class GetVector {
 			t[i] = Math.sqrt(t[i]);
 		}
 		System.out.print(name+"\t");
-		//DecimalFormat df=new DecimalFormat("#.###"); use df.format(any double value)
+		DecimalFormat df=new DecimalFormat("#.###");
 		for(i=0; i<8; i++)
-			System.out.print(t[i]+"\t");
+			System.out.print(df.format(t[i])+"\t");
 		System.out.println();
 		return 0;
 	}

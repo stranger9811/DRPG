@@ -3,6 +3,7 @@ import java.util.Scanner;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.PrintStream;
 import java.lang.Object;
 import java.lang.*;
 import java.io.IOException;
@@ -13,14 +14,44 @@ import java.util.ArrayList;
 import java.util.List;
 import java.lang.Math;
 import java.text.DecimalFormat;
+import java.io.FileNotFoundException;
+import java.lang.Double;
+import java.io.FileOutputStream;
+import java.lang.String;
 public class GetVector {
 	private static BufferedImage BinarizedImage;     
+	private static int DatabaseSize=104;
 	private static int name=1;                                         
+	private static double[][] Vectors = new double[DatabaseSize][8];
+	private static String[] Characters = new String[DatabaseSize];
 	public static void main(String[] args) throws IOException {
+		ReadDatabase(Vectors,Characters);
 		String FileName = args[0];
 		File FilePointer = new File(FileName);                                     
 		BinarizedImage = ImageIO.read(FilePointer);      
 		GetAllCharacter();                                                       
+	}
+	public static int ReadDatabase(double[][] value,String[] c)
+	{
+		int i=0,k=0;
+		String str;			
+		Scanner scan;
+		File file = new File("database.txt");
+		try {
+			scan = new Scanner(file);
+			while(scan.hasNext())
+			{
+				str = scan.nextLine();
+				String[] parts = str.split("\t");
+				c[i] = parts[0];
+				for(k=0;k<8;k++)
+					value[i][k] = Double.parseDouble(parts[k+1]);
+				i++;
+			}
+		} catch (FileNotFoundException e1) {
+			e1.printStackTrace();
+		}
+		return 0;
 	}
 	public static int GetFrame(int[][] Coordinates,int[][] Visited,int Row,int Column)
 	{
@@ -85,14 +116,7 @@ public class GetVector {
 					//System.out.println(Coordinates[q][0]+" "+Coordinates[q][1]);
 					BufferedImage ChracterImage = new BufferedImage(Coordinates[0][1]-Coordinates[0][0]+1, Coordinates[1][1]-Coordinates[1][0]+1, BinarizedImage.getType());
 
-					for(int x=Coordinates[0][0]; x<=Coordinates[0][1]; x++)
-					{
-						for(int y=Coordinates[1][0]; y<=Coordinates[1][1]; y++)
-						{
-							int newpixel=BinarizedImage.getRGB(x,y);   
-							ChracterImage.setRGB(x-Coordinates[0][0],y-Coordinates[1][0],newpixel);
-						}       
-					}
+					GetPureSubImage(ChracterImage,i,j,Coordinates);
 					vector(ChracterImage);
 					writeImage(ChracterImage,Integer.toString(name));
 					name++;
@@ -101,6 +125,82 @@ public class GetVector {
 		}
 		return 0;
 	}
+	public static int GetPureSubImage(BufferedImage image,int Row,int Column,int[][] Coordinates)
+	{
+		for(int x=Coordinates[0][0]; x<=Coordinates[0][1]; x++)
+		{
+			for(int y=Coordinates[1][0]; y<=Coordinates[1][1]; y++)
+			{
+				int newpixel=BinarizedImage.getRGB(x,y);
+				image.setRGB(x-Coordinates[0][0],y-Coordinates[1][0],newpixel);
+			}
+		}
+		int[][] Visited=new int[image.getHeight()][image.getWidth()];
+		for(int i=0; i<image.getHeight(); i++)
+		{
+			for(int j=0; j<image.getWidth(); j++)
+				Visited[i][j]=0;
+		}
+		Row=Row-Coordinates[1][0];
+		Column=Column-Coordinates[0][0];
+		RemoveExtra(image,Visited,Row,Column);
+		int WhitePixel;
+		int Pixel=image.getRGB(Column,Row);
+		int Alpha=new Color(Pixel).getAlpha();
+		WhitePixel=colorToRGB(Alpha,255,255,255);
+		for(int i=0; i<image.getHeight(); i++)
+		{
+			for(int j=0; j<image.getWidth(); j++)
+			{
+				if(Visited[i][j]==0)
+				{
+					image.setRGB(j,i,WhitePixel);
+				}
+
+			}
+		}
+
+		return 0;
+	}
+	private static int colorToRGB(int alpha, int red, int green, int blue) {
+
+		int newPixel = 0;
+		newPixel += alpha;
+		newPixel = newPixel << 8;
+		newPixel += red; newPixel = newPixel << 8;
+		newPixel += green; newPixel = newPixel << 8;
+		newPixel += blue;
+
+		return newPixel;
+
+	}
+	public static int RemoveExtra(BufferedImage image,int[][] Visited,int Row,int Column)
+	{
+		if(Row<0||Row>=image.getHeight())
+			return 0;
+		if(Column<0||Column>=image.getWidth())
+			return 0;
+		int Pixel=image.getRGB(Column,Row);
+		int Red=new Color(Pixel).getRed();
+		if(Red==255 || Visited[Row][Column]==1)
+		{
+			return 0;
+		}
+		else
+		{
+			Visited[Row][Column]=1;
+			RemoveExtra(image,Visited,Row+1,Column+1);
+			RemoveExtra(image,Visited,Row,Column+1);
+			RemoveExtra(image,Visited,Row-1,Column+1);
+			RemoveExtra(image,Visited,Row+1,Column);
+			RemoveExtra(image,Visited,Row-1,Column);
+			RemoveExtra(image,Visited,Row+1,Column-1);
+			RemoveExtra(image,Visited,Row,Column-1);
+			RemoveExtra(image,Visited,Row-1,Column-1);
+		}
+		return 0;
+	}
+
 	public static int vector(BufferedImage image){
 
 		int width = image.getWidth();
@@ -193,7 +293,7 @@ public class GetVector {
 		i=Xs;j=Ys;
 		while(i < width && i>=0 && j < height && j>=0)
 		{
-		
+
 			if((new Color((int)image.getRGB(i, j)).getRed()==0) && j>v[5][1] )
 			{
 				v[5][0] = i;
@@ -206,12 +306,99 @@ public class GetVector {
 			t[i] = Math.pow((v[i][0]-Xs),2) + Math.pow((v[i][1]-Ys),2);
 			t[i] = Math.sqrt(t[i]);
 		}
-		System.out.print(name+"\t");
-		//DecimalFormat df=new DecimalFormat("#.###"); use df.format(any double value)
-		for(i=0; i<8; i++)
-			System.out.print(t[i]+"\t");
-		System.out.println();
+		char CurrentCharacter;
+		CurrentCharacter=Characters[RecognizeCharacter(t)].charAt(0);
+		//System.out.println(name+"\t"+CurrentCharacter);
 		return 0;
+	}
+	public static int RecognizeCharacter(double[] t)
+	{
+	//	for(int i=0; i<8; i++)
+	//		System.out.print(t[i]+"\t");
+	//	System.out.println();
+	//	 String s;
+
+      //Scanner in = new Scanner(System.in);
+
+      //System.out.println("Enter a string");
+      //s = in.nextLine();
+		try {
+		PrintStream out = new PrintStream(new FileOutputStream(Integer.toString(name)+".txt"));
+                System.setOut(out);
+		      for(int i=0; i<8; i++)
+                     System.out.print(t[i]+"\t");
+              System.out.println();
+		}
+		catch (FileNotFoundException e1) {
+                        e1.printStackTrace();
+                }
+
+		char CurrentChar;
+		double min=1000000;
+		int index=0;
+		for(int i=0; i<DatabaseSize; i++)
+		{
+			
+			int size=0;
+			int flag=0;
+			for(int j=0; j<8; j++)
+			{
+				if((Vectors[i][j]!=0&&t[j]==0))
+					flag=1;
+				if(!(Vectors[i][j]==0 || t[j]==0))
+					size++;
+			}
+			if(flag==1)
+				continue;
+			double[] Magnification = new double[size];
+			int k=0;
+			for(int j=0; j<8; j++)
+			{
+				if(!(Vectors[i][j]==0 || t[j]==0))
+				{
+					Magnification[k]=Vectors[i][j]/t[j];
+					k++;
+				}
+			}
+			
+			double value;
+			value = getStdDev(Magnification);
+			CurrentChar=Characters[i].charAt(0);
+                	System.out.println(CurrentChar+"\t"+value);
+			if(value<min)
+			{
+				index=i;
+				min=value;			
+		
+			}
+
+		}
+		CurrentChar=Characters[index].charAt(0);
+                System.out.println("Matched With :  "+CurrentChar+"\t"+min);
+		return index;
+	}
+	public static double getMean(double[] data)
+	{
+		double size = data.length;
+		double sum = 0.0;
+		for(double a : data)
+			sum += a;
+		return sum/size;
+	}
+
+	public static double getVariance(double[] data)
+	{
+		double mean = getMean(data);
+		double temp = 0;
+		double size = data.length;
+		for(int i=0; i<size; i++)
+			temp += (mean-data[i])*(mean-data[i]);
+		return temp/size;
+	}
+
+	public static double getStdDev(double[] data)
+	{
+		return Math.sqrt(getVariance(data));
 	}
 	private static void writeImage(BufferedImage image,String output) {
 		File file = new File(output+".bmp");
@@ -225,6 +412,5 @@ public class GetVector {
 		}
 
 	}
-	
 }
 

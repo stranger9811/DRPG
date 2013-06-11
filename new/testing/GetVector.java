@@ -24,6 +24,7 @@ public class GetVector {
 	}
 	public static int GetFrame(int[][] Coordinates,int[][] Visited,int Row,int Column)
 	{
+		System.out.println(BinarizedImage.getHeight()+" "+BinarizedImage.getWidth()+"("+Row+","+Column+")");
 		if(Row<0||Row>=BinarizedImage.getHeight())
 			return 0;
 		if(Column<0||Column>=BinarizedImage.getWidth())
@@ -81,6 +82,7 @@ public class GetVector {
 					Coordinates[0][0]=10000000;Coordinates[0][1]=-10000000;
 					Coordinates[1][0]=10000000;Coordinates[1][1]=-10000000;
 					GetFrame(Coordinates,Visited,i,j);
+					System.out.println("FUCK YOU");
 					//for(int q=0; q<2; q++)
 					//System.out.println(Coordinates[q][0]+" "+Coordinates[q][1]);
 					BufferedImage ChracterImage = new BufferedImage(Coordinates[0][1]-Coordinates[0][0]+1, Coordinates[1][1]-Coordinates[1][0]+1, BinarizedImage.getType());
@@ -93,124 +95,11 @@ public class GetVector {
 							ChracterImage.setRGB(x-Coordinates[0][0],y-Coordinates[1][0],newpixel);
 						}       
 					}
-					vector(ChracterImage);
 					writeImage(ChracterImage,Integer.toString(name));
 					name++;
 				}
 			}
 		}
-		return 0;
-	}
-	public static int vector(BufferedImage image){
-
-		int width = image.getWidth();
-		int height = image.getHeight();
-		double[] t = new double[8];
-		int [][] v = new int[8][2];
-		int i,j,pixel;
-		int Xs=0,Ys=0,count=0;;
-
-		for(i=0;i<width;i++) {
-			for(j=0;j<height;j++)
-			{
-				pixel = new Color(image.getRGB(i, j)).getRed();
-				if(pixel == 0)
-				{
-					Xs = Xs + i;
-					Ys = Ys + j;
-					count = count + 1;
-				}
-			}
-		}
-		Xs = Xs/count;
-		Ys = Ys/count;
-		for(i=0;i<8;i++)
-		{
-			v[i][0]=Xs;
-			v[i][1]=Ys;
-		}
-		i=Xs;j=Ys;
-		while(i < width && i>=0 && j < height && j>=0)
-		{
-			if((new Color(image.getRGB(i, j)).getRed()==0) && i>v[0][0] )
-				v[0][0] = i;
-			i++;
-		}
-		i=Xs;j=Ys;
-		while(i < width && i>=0 && j < height && j>=0)
-		{
-			if((new Color(image.getRGB(i, j)).getRed()==0) && i<v[4][0] )
-				v[4][0] = i;
-			i--;
-		}
-		i=Xs;j=Ys;
-		while(i < width && i>=0 && j < height && j>=0)
-		{
-			if((new Color(image.getRGB(i, j)).getRed()==0) && j<v[2][1] )
-				v[2][1] = j;
-			j--;
-		}
-		i=Xs;j=Ys;
-		while(i < width && i>=0 && j < height && j>=0)
-		{
-			if((new Color(image.getRGB(i, j)).getRed()==0) && j>v[6][1] )
-				v[6][1] = j;
-			j++;
-		}
-		i=Xs;j=Ys;
-		while(i < width && i>=0 && j < height && j>=0)
-		{
-			if((new Color(image.getRGB(i, j)).getRed()==0) && j>v[7][1] )
-			{
-				v[7][0] = i;
-				v[7][1] = j;
-			}
-			i++;
-			j++;
-		}
-		i=Xs;j=Ys;
-		while(i < width && i>=0 && j < height && j>=0)
-		{
-			if((new Color(image.getRGB(i, j)).getRed()==0) && j<v[1][1] )
-			{
-				v[1][0] = i;
-				v[1][1] = j;
-			}
-			i++;
-			j--;
-		}
-		i=Xs;j=Ys;
-		while(i < width && i>=0 && j < height && j>=0)
-		{
-			if((new Color(image.getRGB(i, j)).getRed()==0) && j<v[3][1] )
-			{
-				v[3][0] = i;
-				v[3][1] = j;
-			}
-			i--;
-			j--;
-		}
-		i=Xs;j=Ys;
-		while(i < width && i>=0 && j < height && j>=0)
-		{
-		
-			if((new Color((int)image.getRGB(i, j)).getRed()==0) && j>v[5][1] )
-			{
-				v[5][0] = i;
-				v[5][1] = j;
-			}
-			i--;
-			j++;
-		}
-		for(i=0;i<8;i++){
-			t[i] = Math.pow((v[i][0]-Xs),2) + Math.pow((v[i][1]-Ys),2);
-			t[i] = Math.sqrt(t[i]);
-		}
-		System.out.print(name+"\t");
-		//DecimalFormat df=new DecimalFormat("#.###"); use df.format(any double value)
-		for(i=0; i<8; i++)
-			System.out.print(t[i]+"\t");
-		System.out.println();
 		return 0;
 	}
 	private static void writeImage(BufferedImage image,String output) {
@@ -224,7 +113,5 @@ public class GetVector {
 			//System.out.println("Works fine");
 		}
 
-	}
-	
 }
-
+}
