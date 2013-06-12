@@ -24,12 +24,60 @@ public class GetVector {
 	private static int name=1;                                         
 	private static double[][] Vectors = new double[DatabaseSize][8];
 	private static String[] Characters = new String[DatabaseSize];
+	private static char[][] TextInImage=new char[500][100];
 	public static void main(String[] args) throws IOException {
 		ReadDatabase(Vectors,Characters);
 		String FileName = args[0];
 		File FilePointer = new File(FileName);                                     
 		BinarizedImage = ImageIO.read(FilePointer);      
-		GetAllCharacter();                                                       
+		int NoOfLines=GetAllCharacter(TextInImage);
+		//PrintDataInFile(TextInImage,NoOfLines);
+
+
+	}
+	public static int PrintDataInFile(char[][] Text,int NoOfLines)
+	{
+		try {
+			PrintStream out = new PrintStream(new FileOutputStream("text.txt"));
+			System.setOut(out);
+			for(int i=0; i<NoOfLines; i++)
+			{
+				int j=0;
+				while(Text[i][j]!=':')
+					System.out.print(Text[i][j]);
+
+				System.out.println();
+			}
+		}
+		catch (FileNotFoundException e1) {
+			e1.printStackTrace();
+		}
+		return 1;
+
+	}
+	public static int PrintLine(char[][] Text,int NoOfLines,int upto)
+	{
+		try {
+			PrintStream out = new PrintStream(new FileOutputStream("text.txt"));
+			System.setOut(out);
+			for(int i=0; i<NoOfLines; i++)
+			{
+				for(int j=0; j<upto;j++)
+				{
+					if(Text[i][j]=='?')
+						break;
+					System.out.print(Text[i][j]);
+
+				}
+
+				System.out.println();
+			}
+		}
+		catch (FileNotFoundException e1) {
+			e1.printStackTrace();
+		}
+		return 1;
+
 	}
 	public static int ReadDatabase(double[][] value,String[] c)
 	{
@@ -53,46 +101,14 @@ public class GetVector {
 		}
 		return 0;
 	}
-	public static int GetFrame(int[][] Coordinates,int[][] Visited,int Row,int Column)
-	{
-		if(Row<0||Row>=BinarizedImage.getHeight())
-			return 0;
-		if(Column<0||Column>=BinarizedImage.getWidth())
-			return 0;
-		int Pixel=BinarizedImage.getRGB(Column,Row);
-		int Red=new Color(Pixel).getRed();
-		if(Red==255 || Visited[Row][Column]==1)
-		{
-			return 0;
-		}
-		else
-		{
-			Visited[Row][Column]=1;
-			if(Row<Coordinates[1][0])
-				Coordinates[1][0]=Row;
-			if(Row>Coordinates[1][1])
-				Coordinates[1][1]=Row;
-			if(Column<Coordinates[0][0])
-				Coordinates[0][0]=Column;
-			if(Column>Coordinates[0][1])
-				Coordinates[0][1]=Column;
-			GetFrame(Coordinates,Visited,Row+1,Column+1);
-			GetFrame(Coordinates,Visited,Row,Column+1);
-			GetFrame(Coordinates,Visited,Row-1,Column+1);
-			GetFrame(Coordinates,Visited,Row+1,Column);
-			GetFrame(Coordinates,Visited,Row-1,Column);
-			GetFrame(Coordinates,Visited,Row+1,Column-1);
-			GetFrame(Coordinates,Visited,Row,Column-1);
-			GetFrame(Coordinates,Visited,Row-1,Column-1);
-		}
-		return 0;
-	}
-	public static int GetAllCharacter()
+	public static int GetAllCharacter(char[][] Text)
 	{
 		int Height=BinarizedImage.getHeight();
 		int Width =BinarizedImage.getWidth();
+		int[][] Frames=new int[100][6];
 		int[][] Visited= new int[Height][Width];
-		int i,j;
+		char CurrentCharacter;
+		int i,j,NoOfFrames=0;
 		for(i=0; i<Height; i++)
 		{
 			for(j=0; j<Width; j++)
@@ -100,30 +116,106 @@ public class GetVector {
 				Visited[i][j]=0;
 			}
 		}
+		PrintStream original = new PrintStream(System.out);
+		int Row=0,Column;
 		for(i=0; i<Height; i++)
 		{
 			for(j=0; j<Width; j++)
 			{
+
 				int Pixel=BinarizedImage.getRGB(j,i);
 				int Red=new Color(Pixel).getRed();
 				int[][] Coordinates=new int[2][2];
 				if((Red==0) && (Visited[i][j]==0))
 				{
+					
+					original.println("no of frames = " + NoOfFrames+",Image no = "+ name );
 					Coordinates[0][0]=10000000;Coordinates[0][1]=-10000000;
 					Coordinates[1][0]=10000000;Coordinates[1][1]=-10000000;
-					GetFrame(Coordinates,Visited,i,j);
-					//for(int q=0; q<2; q++)
-					//System.out.println(Coordinates[q][0]+" "+Coordinates[q][1]);
-					BufferedImage ChracterImage = new BufferedImage(Coordinates[0][1]-Coordinates[0][0]+1, Coordinates[1][1]-Coordinates[1][0]+1, BinarizedImage.getType());
-
-					GetPureSubImage(ChracterImage,i,j,Coordinates);
-					vector(ChracterImage);
-					writeImage(ChracterImage,Integer.toString(name));
-					name++;
+					Frame.GetFrame(BinarizedImage,Coordinates,Visited,i,j);
+					Frames[NoOfFrames][0]=Coordinates[0][0];
+					Frames[NoOfFrames][1]=Coordinates[0][1];
+					Frames[NoOfFrames][2]=Coordinates[1][0];
+					Frames[NoOfFrames][3]=Coordinates[1][1];
+					Frames[NoOfFrames][4]=i;
+					Frames[NoOfFrames][5]=j;
+					if(NoOfFrames>=1)
+					{
+						//Condition Of Next Line
+						if(Frames[NoOfFrames][2]>=Frames[NoOfFrames-1][3])   
+						{
+							//Call For sorting the frame so that character come in right order
+							original.println("Next Line With no of frames = " + NoOfFrames+",Image no = "+ name );
+							sort.BubbleSort(Frames,0,NoOfFrames-1);
+							Column=0;
+							for(int m=0; m<NoOfFrames; m++)
+							{
+								BufferedImage ChracterImage = new BufferedImage(Frames[m][1]-Frames[m][0]+1,Frames[m][3]-Frames[m][2]+1, BinarizedImage.getType());		
+								Coordinates[0][0]=Frames[m][0];
+								Coordinates[0][1]=Frames[m][1];
+								Coordinates[1][0]=Frames[m][2];
+								Coordinates[1][1]=Frames[m][3];
+								GetPureSubImage(ChracterImage,Frames[m][4],Frames[m][5],Coordinates);
+								CurrentCharacter=vector(ChracterImage);
+								Text[Row][Column]=CurrentCharacter;
+								System.out.println(CurrentCharacter);
+								Column++;
+								writeImage(ChracterImage,Integer.toString(name));
+								name++;
+							}
+							Text[Row][Column]='?';
+							PrintLine(Text,Row,Column);
+							Row++;
+							Frames[0][0]=Frames[NoOfFrames][0];
+							Frames[0][1]=Frames[NoOfFrames][1];
+							Frames[0][2]=Frames[NoOfFrames][2];
+							Frames[0][3]=Frames[NoOfFrames][3];
+							Frames[0][4]=Frames[NoOfFrames][4];
+							Frames[0][5]=Frames[NoOfFrames][5];
+							NoOfFrames=0;		
+						}
+					}
+					NoOfFrames++;	
 				}
 			}
 		}
-		return 0;
+
+
+
+
+
+
+		/*/Printing last line
+		if(NoOfFrames>=1)
+		{
+			int[][] Coordinates=new int[2][2];
+			sort.BubbleSort(Frames,0,NoOfFrames-1);
+			Column=0;
+			for(int m=0; m<NoOfFrames; m++)
+			{
+				original.println("no of frames = " + NoOfFrames);
+				BufferedImage ChracterImage = new BufferedImage(Frames[m][1]-Frames[m][0]+1,Frames[m][3]-Frames[m][2]+1, BinarizedImage.getType());		
+				Coordinates[0][0]=Frames[m][0];
+				Coordinates[0][1]=Frames[m][1];
+				Coordinates[1][0]=Frames[m][2];
+				Coordinates[1][1]=Frames[m][3];
+				GetPureSubImage(ChracterImage,Frames[m][4],Frames[m][5],Coordinates);
+				CurrentCharacter=vector(ChracterImage);
+				Text[Row][Column]=CurrentCharacter;
+				System.out.println(CurrentCharacter);
+				Column++;
+				writeImage(ChracterImage,Integer.toString(name));
+				name++;
+			}
+			Text[Row][Column]='?';
+			PrintLine(Text,Row,Column);
+
+
+		}
+
+		*/
+
+		return Row;
 	}
 	public static int GetPureSubImage(BufferedImage image,int Row,int Column,int[][] Coordinates)
 	{
@@ -201,7 +293,7 @@ public class GetVector {
 		return 0;
 	}
 
-	public static int vector(BufferedImage image){
+	public static char vector(BufferedImage image){
 
 		int width = image.getWidth();
 		int height = image.getHeight();
@@ -309,36 +401,36 @@ public class GetVector {
 		char CurrentCharacter;
 		CurrentCharacter=Characters[RecognizeCharacter(t)].charAt(0);
 		//System.out.println(name+"\t"+CurrentCharacter);
-		return 0;
+		return CurrentCharacter;
 	}
 	public static int RecognizeCharacter(double[] t)
 	{
-	//	for(int i=0; i<8; i++)
-	//		System.out.print(t[i]+"\t");
-	//	System.out.println();
-	//	 String s;
+		//	for(int i=0; i<8; i++)
+		//		System.out.print(t[i]+"\t");
+		//	System.out.println();
+		//	 String s;
 
-      //Scanner in = new Scanner(System.in);
+		//Scanner in = new Scanner(System.in);
 
-      //System.out.println("Enter a string");
-      //s = in.nextLine();
+		//System.out.println("Enter a string");
+		//s = in.nextLine();
 		try {
-		PrintStream out = new PrintStream(new FileOutputStream(Integer.toString(name)+".txt"));
-                System.setOut(out);
-		      for(int i=0; i<8; i++)
-                     System.out.print(t[i]+"\t");
-              System.out.println();
+			PrintStream out = new PrintStream(new FileOutputStream(Integer.toString(name)+".txt"));
+			System.setOut(out);
+			for(int i=0; i<8; i++)
+				System.out.print(t[i]+"\t");
+			System.out.println();
 		}
 		catch (FileNotFoundException e1) {
-                        e1.printStackTrace();
-                }
+			e1.printStackTrace();
+		}
 
 		char CurrentChar;
 		double min=1000000;
 		int index=0;
 		for(int i=0; i<DatabaseSize; i++)
 		{
-			
+
 			int size=0;
 			int flag=0;
 			for(int j=0; j<8; j++)
@@ -360,46 +452,24 @@ public class GetVector {
 					k++;
 				}
 			}
-			
+
 			double value;
-			value = getStdDev(Magnification);
+			value = Statistics.getStdDev(Magnification);
 			CurrentChar=Characters[i].charAt(0);
-                	System.out.println(CurrentChar+"\t"+value);
+			System.out.println(CurrentChar+"\t"+value);
 			if(value<min)
 			{
 				index=i;
 				min=value;			
-		
+
 			}
 
 		}
 		CurrentChar=Characters[index].charAt(0);
-                System.out.println("Matched With :  "+CurrentChar+"\t"+min);
+		System.out.println("Matched With :  "+CurrentChar+"\t"+min);
 		return index;
 	}
-	public static double getMean(double[] data)
-	{
-		double size = data.length;
-		double sum = 0.0;
-		for(double a : data)
-			sum += a;
-		return sum/size;
-	}
-
-	public static double getVariance(double[] data)
-	{
-		double mean = getMean(data);
-		double temp = 0;
-		double size = data.length;
-		for(int i=0; i<size; i++)
-			temp += (mean-data[i])*(mean-data[i]);
-		return temp/size;
-	}
-
-	public static double getStdDev(double[] data)
-	{
-		return Math.sqrt(getVariance(data));
-	}
+	
 	private static void writeImage(BufferedImage image,String output) {
 		File file = new File(output+".bmp");
 		try {
@@ -413,4 +483,3 @@ public class GetVector {
 
 	}
 }
-
