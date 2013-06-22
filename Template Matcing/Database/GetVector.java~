@@ -20,27 +20,25 @@ import java.lang.Double;
 import java.io.FileOutputStream;
 import java.lang.String;
 public class GetVector {
-	private static BufferedImage BinarizedImage;     
-	private static int DatabaseSize=610;
+	private static BufferedImage binarized_image;     
+	private static int database_size=610;
 	private static int name=1;  
-	private static Hashtable<String,Integer> LoopsInCharacter= new Hashtable<String,Integer>();
 	private static PrintStream original = new PrintStream(System.out);                                       
-	private static double[][] Vectors = new double[DatabaseSize][8];
-	private static String[] Colors = new String[DatabaseSize];
-//	private static 
-	private static String[] Characters = new String[DatabaseSize];
+	private static int[][][] database = new int[database_size][12][12];
+	private static String[] Colors = new String[database_size];
+	private static String[] characters = new String[database_size];
 	public static void main(String[] args) throws IOException {
-		ReadDatabase(Vectors,Characters,Colors);
-		DeclareHash.Declare(LoopsInCharacter); 
+		ReadDatabase(database,characters,Colors);
+	
 		String FileName = args[0];
 		File FilePointer = new File(FileName);                                     
-		BinarizedImage = ImageIO.read(FilePointer);
-		BinarizedImage = Binarization.GetBmp(BinarizedImage);      
+		binarized_image = ImageIO.read(FilePointer);
+		binarized_image = Binarization.GetBmp(binarized_image);      
 		GetAllCharacter();     
 		 
 		                                            
 	}
-	public static int ReadDatabase(double[][] value,String[] c,String[] col)
+	public static int ReadDatabase(int[][][] value,String[] c,String[] col)
 	{
 		int i=0,k=0;
 		String str;			
@@ -55,7 +53,7 @@ public class GetVector {
 				c[i] = parts[0];
 				col[i]=parts[1];
 				for(k=0;k<8;k++)
-					value[i][k] = Double.parseDouble(parts[k+2]);
+					value[i][k][1] = Integer.parseInt(parts[k+2]);
 				i++;
 			}
 		} catch (FileNotFoundException e1) {
@@ -66,14 +64,14 @@ public class GetVector {
 	
 	public static int GetAllCharacter()
 	{
-		int Height=BinarizedImage.getHeight();
-		int Width =BinarizedImage.getWidth();
+		int Height=binarized_image.getHeight();
+		int Width =binarized_image.getWidth();
 		int[] BlackFreq=new int[Height];
 		int[][] Visited= new int[Height][Width];
 		for(int i=0; i<Height;i++)
 			for(int j=0; j<Width;j++)
 				Visited[i][j]=0;
-		ImageLib.FrequencyOfBlack(BinarizedImage,BlackFreq);
+		ImageLib.FrequencyOfBlack(binarized_image,BlackFreq);
 		String[] Text=new String[100];
 		for(int i=0 ; i<100; i++)
 			Text[i]="";
@@ -93,7 +91,7 @@ public class GetVector {
 				}
 				//MaxIndex=(MaxIndex+i)/2;
 				
-				GetOneLine(BinarizedImage,Text[LineNo],MaxIndex,Visited);
+				GetOneLine(binarized_image,Text[LineNo],MaxIndex,Visited);
 				LineNo++;
 			}
 		}
@@ -105,7 +103,6 @@ public class GetVector {
 		
 		int Height=Image.getHeight();
 		int Width =Image.getWidth();		
-		double[] t=new double[8];
 		int[][] Coordinates=new int[2][2];
 		int[] Difference=new int[100];
 		int NoOfFrames=0,ArraySize=0;
@@ -113,7 +110,7 @@ public class GetVector {
 		
 		for(int j=0; j<Width; j++)
 		{
-			int Pixel=BinarizedImage.getRGB(j,Index);
+			int Pixel=binarized_image.getRGB(j,Index);
 			int Red=new Color(Pixel).getRed();
 				
 				
@@ -138,13 +135,14 @@ public class GetVector {
 						XMaxLast=Coordinates[0][1];
 					}
 										
-					BufferedImage CharacterImage = new BufferedImage(Coordinates[0][1]-Coordinates[0][0]+1, Coordinates[1][1]-Coordinates[1][0]+1, BinarizedImage.getType());
-					GetPureSubImage(CharacterImage,Index,j,Coordinates);
-					ImageLib.vector(CharacterImage,t);
+					BufferedImage character_image = new BufferedImage(Coordinates[0][1]-Coordinates[0][0]+1, Coordinates[1][1]-Coordinates[1][0]+1, binarized_image.getType());
+					GetPureSubImage(character_image,Index,j,Coordinates);
+
 					char CurrentCharacter;
-					CurrentCharacter=Characters[RecognizeCharacter(CharacterImage,t)].charAt(0);
+					
+					CurrentCharacter=characters[CharFeatures.recognize(character_image,database,characters,database_size)].charAt(0);
 					CurrentLine=CurrentLine+CurrentCharacter;
-					writeImage(CharacterImage,Integer.toString(name));
+					writeImage(character_image,Integer.toString(name));
 					name++;
 					NoOfFrames++;
 				}
@@ -179,7 +177,7 @@ public class GetVector {
 		{
 			for(int y=Coordinates[1][0]; y<=Coordinates[1][1]; y++)
 			{
-				int newpixel=BinarizedImage.getRGB(x,y);
+				int newpixel=binarized_image.getRGB(x,y);
 				image.setRGB(x-Coordinates[0][0],y-Coordinates[1][0],newpixel);
 			}
 		}
@@ -212,107 +210,6 @@ public class GetVector {
 	}
 	
 	
-	public static int RecognizeCharacter(BufferedImage Image,double[] t)
-	{
-	
-		try {
-		PrintStream out = new PrintStream(new FileOutputStream(Integer.toString(name)+".txt"));
-                System.setOut(out);
-		      for(int i=0; i<8; i++)
-                     System.out.print(t[i]+"\t");
-              System.out.println();
-		}
-		catch (FileNotFoundException e1) {
-                        e1.printStackTrace();
-                }
-
-
-		
-		int[] best5char=new int[5];
-		double[] best5dev=new double[5];
-		for(int x=0;x<5;x++)
-		{
-			best5dev[x]=1000000;
-		}
-		char CurrentChar;
-		double min=1000000;
-		int index=0;
-		for(int i=0; i<DatabaseSize; i++)
-		{
-			
-			int size=0;
-			int flag=0;
-			if(LoopsInCharacter.containsKey(Characters[i]))
-			{
-				if((LoopsInCharacter.get(Characters[i])!=CharFeatures.GetLoop(Image))&&(LoopsInCharacter.get(Characters[i])!=-1))
-					continue;
-			}
-			for(int j=0; j<8; j++)
-			{
-				if((Vectors[i][j]!=0&&t[j]==0))
-					flag=1;
-				if(!(Vectors[i][j]==0 || t[j]==0))
-					size++;
-			}
-			if(flag==1)
-				continue;
-			double[] Magnification = new double[size];
-			int k=0;
-			for(int j=0; j<8; j++)
-			{
-				if(!(Vectors[i][j]==0 || t[j]==0))
-				{
-					Magnification[k]=Vectors[i][j]/t[j];
-					k++;
-				}
-			}
-			
-			double value;
-			value = Statistics.getStdDev(Magnification);
-			CurrentChar=Characters[i].charAt(0);
-			{
-				int max_index=1;
-				int flag2=0;
-				int x;
-				for(x=0;x<5;x++)
-				{
-					if(CurrentChar==Characters[best5char[x]].charAt(0))
-					{
-						flag2=1;
-						break;
-					}
-					if(best5dev[x]>best5dev[max_index])
-						max_index=x;
-				}
-				if(flag2==1)
-				{
-					if(value<best5dev[x])
-						best5dev[x]=value;
-				
-				}
-				else if(value<best5dev[max_index])
-				{
-					best5dev[max_index]=value;
-					best5char[max_index]=i;
-				}
-			}
-                	//System.out.println(CurrentChar+"\t"+value);
-			if(value<min)
-			{
-				index=i;
-				min=value;			
-		
-			}
-
-		}
-		for(int x=0; x<5;x++)
-		{
-			System.out.println(Characters[best5char[x]].charAt(0)+"\t"+best5dev[x]);
-		}
-		CurrentChar=Characters[index].charAt(0);
-                System.out.println("Matched With :  "+CurrentChar+"\t"+min);
-		return index;
-	}
 	
 	private static void writeImage(BufferedImage image,String output) {
 		File file = new File(output+".bmp");

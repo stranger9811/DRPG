@@ -1,4 +1,3 @@
-import java.util.Hashtable;
 import javax.imageio.ImageIO;
 import java.util.Scanner;
 import java.awt.Color;
@@ -21,26 +20,20 @@ import java.io.FileOutputStream;
 import java.lang.String;
 public class GetVector {
 	private static BufferedImage BinarizedImage;     
-	private static int DatabaseSize=610;
+	private static int DatabaseSize=104;
 	private static int name=1;  
-	private static Hashtable<String,Integer> LoopsInCharacter= new Hashtable<String,Integer>();
 	private static PrintStream original = new PrintStream(System.out);                                       
 	private static double[][] Vectors = new double[DatabaseSize][8];
-	private static String[] Colors = new String[DatabaseSize];
-//	private static 
 	private static String[] Characters = new String[DatabaseSize];
 	public static void main(String[] args) throws IOException {
-		ReadDatabase(Vectors,Characters,Colors);
-		DeclareHash.Declare(LoopsInCharacter); 
+		ReadDatabase(Vectors,Characters);
 		String FileName = args[0];
 		File FilePointer = new File(FileName);                                     
 		BinarizedImage = ImageIO.read(FilePointer);
 		BinarizedImage = Binarization.GetBmp(BinarizedImage);      
-		GetAllCharacter();     
-		 
-		                                            
+		GetAllCharacter();                                                       
 	}
-	public static int ReadDatabase(double[][] value,String[] c,String[] col)
+	public static int ReadDatabase(double[][] value,String[] c)
 	{
 		int i=0,k=0;
 		String str;			
@@ -53,9 +46,8 @@ public class GetVector {
 				str = scan.nextLine();
 				String[] parts = str.split("\t");
 				c[i] = parts[0];
-				col[i]=parts[1];
 				for(k=0;k<8;k++)
-					value[i][k] = Double.parseDouble(parts[k+2]);
+					value[i][k] = Double.parseDouble(parts[k+1]);
 				i++;
 			}
 		} catch (FileNotFoundException e1) {
@@ -138,13 +130,13 @@ public class GetVector {
 						XMaxLast=Coordinates[0][1];
 					}
 										
-					BufferedImage CharacterImage = new BufferedImage(Coordinates[0][1]-Coordinates[0][0]+1, Coordinates[1][1]-Coordinates[1][0]+1, BinarizedImage.getType());
-					GetPureSubImage(CharacterImage,Index,j,Coordinates);
-					ImageLib.vector(CharacterImage,t);
+					BufferedImage ChracterImage = new BufferedImage(Coordinates[0][1]-Coordinates[0][0]+1, Coordinates[1][1]-Coordinates[1][0]+1, BinarizedImage.getType());
+					GetPureSubImage(ChracterImage,Index,j,Coordinates);
+					ImageLib.vector(ChracterImage,t);
 					char CurrentCharacter;
-					CurrentCharacter=Characters[RecognizeCharacter(CharacterImage,t)].charAt(0);
+					CurrentCharacter=Characters[RecognizeCharacter(t)].charAt(0);
 					CurrentLine=CurrentLine+CurrentCharacter;
-					writeImage(CharacterImage,Integer.toString(name));
+					writeImage(ChracterImage,Integer.toString(name));
 					name++;
 					NoOfFrames++;
 				}
@@ -212,9 +204,18 @@ public class GetVector {
 	}
 	
 	
-	public static int RecognizeCharacter(BufferedImage Image,double[] t)
-	{
 	
+	public static int RecognizeCharacter(double[] t)
+	{
+	//	for(int i=0; i<8; i++)
+	//		System.out.print(t[i]+"\t");
+	//	System.out.println();
+	//	 String s;
+
+      //Scanner in = new Scanner(System.in);
+
+      //System.out.println("Enter a string");
+      //s = in.nextLine();
 		try {
 		PrintStream out = new PrintStream(new FileOutputStream(Integer.toString(name)+".txt"));
                 System.setOut(out);
@@ -226,14 +227,6 @@ public class GetVector {
                         e1.printStackTrace();
                 }
 
-
-		
-		int[] best5char=new int[5];
-		double[] best5dev=new double[5];
-		for(int x=0;x<5;x++)
-		{
-			best5dev[x]=1000000;
-		}
 		char CurrentChar;
 		double min=1000000;
 		int index=0;
@@ -242,11 +235,6 @@ public class GetVector {
 			
 			int size=0;
 			int flag=0;
-			if(LoopsInCharacter.containsKey(Characters[i]))
-			{
-				if((LoopsInCharacter.get(Characters[i])!=CharFeatures.GetLoop(Image))&&(LoopsInCharacter.get(Characters[i])!=-1))
-					continue;
-			}
 			for(int j=0; j<8; j++)
 			{
 				if((Vectors[i][j]!=0&&t[j]==0))
@@ -270,33 +258,7 @@ public class GetVector {
 			double value;
 			value = Statistics.getStdDev(Magnification);
 			CurrentChar=Characters[i].charAt(0);
-			{
-				int max_index=1;
-				int flag2=0;
-				int x;
-				for(x=0;x<5;x++)
-				{
-					if(CurrentChar==Characters[best5char[x]].charAt(0))
-					{
-						flag2=1;
-						break;
-					}
-					if(best5dev[x]>best5dev[max_index])
-						max_index=x;
-				}
-				if(flag2==1)
-				{
-					if(value<best5dev[x])
-						best5dev[x]=value;
-				
-				}
-				else if(value<best5dev[max_index])
-				{
-					best5dev[max_index]=value;
-					best5char[max_index]=i;
-				}
-			}
-                	//System.out.println(CurrentChar+"\t"+value);
+                	System.out.println(CurrentChar+"\t"+value);
 			if(value<min)
 			{
 				index=i;
@@ -304,10 +266,6 @@ public class GetVector {
 		
 			}
 
-		}
-		for(int x=0; x<5;x++)
-		{
-			System.out.println(Characters[best5char[x]].charAt(0)+"\t"+best5dev[x]);
 		}
 		CurrentChar=Characters[index].charAt(0);
                 System.out.println("Matched With :  "+CurrentChar+"\t"+min);
